@@ -1,11 +1,23 @@
-﻿using NPOI.HSSF.UserModel;
+﻿using Microsoft.Extensions.Configuration;
+using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
+using Serilog;
 using System.Text.Json;
 
 class Program
 {
     static void Main(string[] args)
     {
+        IConfiguration config = new ConfigurationBuilder()
+            .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .Build();
+
+        // Setup Serilog
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(config)
+            .CreateLogger();
+
         // Project root
         string projectRoot = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)!
             .Parent!
@@ -16,8 +28,12 @@ class Program
         // Assets folder
         string assetsFolder = Path.Combine(projectRoot, "Assets");
 
-        string inputFilePath = @"C:\Projects\EXTZRRPF2.xls";
-        string outputFolder = @"C:\Projects\Save";
+        string xmlInputFilePath = config["FileSettings:XmlInputFilePath"] ?? throw new Exception("XmlInputFilePath not configured");
+        string xmlOutputFilePath = config["FileSettings:XmlOutputFilePath"] ?? throw new Exception("XmlOutputFilePath not configured");
+        string xmlInputFileName = config["FileSettings:XmlInputFileName"] ?? throw new Exception("XmlInputFileName not configured");
+
+        string inputFilePath = Path.Combine(xmlInputFilePath, xmlInputFileName);
+        string outputFolder = xmlOutputFilePath;
 
         // New file name
         string originalFileName = Path.GetFileNameWithoutExtension(inputFilePath);
@@ -27,6 +43,9 @@ class Program
 
         string mappingFilePath = Path.Combine(assetsFolder, "mappings.json");
 
+        Log.Information("Input file: {InputFile}", inputFilePath);
+        Log.Information("Output file: {OutputFile}", outputFilePath);
+
         // Create output folder if not exists
         if (!Directory.Exists(outputFolder))
         {
@@ -35,7 +54,7 @@ class Program
 
         if (!File.Exists(mappingFilePath))
         {
-            Console.WriteLine($"Input file not found: {mappingFilePath}");
+            Log.Error($"Input file not found: {mappingFilePath}");
             return;
         }
 
@@ -49,7 +68,7 @@ class Program
 
             if (mappings == null)
             {
-                Console.WriteLine("Invalid mappings.json");
+                Log.Error("Invalid mappings.json");
                 return;
             }
 
@@ -86,13 +105,16 @@ class Program
                 new FileStream(outputFilePath, FileMode.Create, FileAccess.Write);
 
             workbook.Write(outputFile);
-
-            Console.WriteLine("Headers updated successfully.");
+            Log.Information("File saved successfully");
         }
         catch (Exception ex)
         {
-            Console.WriteLine("Error:");
-            Console.WriteLine(ex.Message);
+            Log.Error("Error:");
+            Log.Error(ex.Message);
+        }
+        finally
+        {
+            Log.CloseAndFlush();
         }
     }
 }
