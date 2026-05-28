@@ -19,11 +19,6 @@ class Program
             .CreateLogger();
 
         // Project root
-        //string projectRoot = Directory.GetParent(AppDomain.CurrentDomain.BaseDirectory)!
-        //    .Parent!
-        //    .Parent!
-        //    .Parent!
-        //    .FullName;
         string projectRoot = AppContext.BaseDirectory;
 
         // Assets folder
