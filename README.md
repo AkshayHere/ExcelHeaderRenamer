@@ -7,5 +7,5 @@ Sample application created for updating the headers within an excel file
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o "Releases\v1.0.0"
 
 # Compress for `publish` in github
-Compress-Archive -Path publish\* -DestinationPath Releases\ExcelProcessorService{releaseTag}.zip
+Compress-Archive -Path "Releases\{releaseTag}\*" -DestinationPath Releases\ExcelProcessorService{releaseTag}.zip
 ```
